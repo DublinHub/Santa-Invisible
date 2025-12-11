@@ -21,8 +21,8 @@ app.use(express.json());
 /* 🔴 SERVIR ARCHIVOS ESTÁTICOS ANTES DE LAS RUTAS */
 app.use(express.static(path.join(__dirname, "public")));
 
-/* BASE DE DATOS */
-const db = new Database("santa.db");
+/* BASE DE DATOS — AHORA PERSISTE EN EL VOLUMEN */
+const db = new Database("/app/data/santa.db");
 
 /* TABLAS */
 db.exec(`
