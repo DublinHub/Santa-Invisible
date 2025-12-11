@@ -109,6 +109,7 @@ function hacerSorteo(participants) {
 
 /* RUTAS API */
 
+// Crear evento
 app.post("/api/events", (req, res) => {
   const { name, description, deadline } = req.body;
 
@@ -138,6 +139,7 @@ app.post("/api/events", (req, res) => {
   });
 });
 
+// Obtener evento
 app.get("/api/events/:slug", (req, res) => {
   const { slug } = req.params;
   const event = db.prepare(
@@ -149,7 +151,7 @@ app.get("/api/events/:slug", (req, res) => {
   res.json(event);
 });
 
-/* AGREGAR PARTICIPANTE */
+// Agregar participante
 app.post("/api/events/:slug/participants", (req, res) => {
   const { slug } = req.params;
   const { name, email, phone, wishlist } = req.body;
@@ -183,7 +185,7 @@ app.post("/api/events/:slug/participants", (req, res) => {
   });
 });
 
-/* LISTAR PARTICIPANTES */
+// Listar participantes
 app.get("/api/events/:slug/participants", (req, res) => {
   const event = db.prepare("SELECT * FROM events WHERE slug = ?").get(req.params.slug);
   if (!event) return res.status(404).json({ error: "Evento no encontrado" });
@@ -193,7 +195,7 @@ app.get("/api/events/:slug/participants", (req, res) => {
   res.json(participants);
 });
 
-/* HACER SORTEO */
+// Realizar sorteo
 app.post("/api/events/:slug/draw", (req, res) => {
   const { adminCode } = req.body;
   const slug = req.params.slug;
@@ -252,7 +254,7 @@ app.post("/api/events/:slug/draw", (req, res) => {
   });
 });
 
-/* VER ASIGNACIÓN */
+// Ver asignación individual
 app.post("/api/events/:slug/my-assignment", (req, res) => {
   const { slug } = req.params;
   const { email } = req.body;
@@ -287,6 +289,34 @@ app.post("/api/events/:slug/my-assignment", (req, res) => {
     receiverName: receiver.name,
     receiverWishlist: receiver.wishlist,
   });
+});
+
+/* ⭐ NUEVA RUTA: VER TODAS LAS ASIGNACIONES (SOLO ADMIN) */
+app.get("/api/events/:slug/admin-assignments", (req, res) => {
+  const { slug } = req.params;
+  const { adminCode } = req.query;
+
+  const event = db.prepare("SELECT * FROM events WHERE slug = ?").get(slug);
+  if (!event) return res.status(404).json({ error: "Evento no encontrado" });
+
+  if (event.adminCode !== adminCode) {
+    return res.status(403).json({ error: "Código admin incorrecto" });
+  }
+
+  const rows = db.prepare(`
+    SELECT 
+      g.name AS giver,
+      g.email AS giverEmail,
+      r.name AS receiver,
+      r.email AS receiverEmail,
+      r.wishlist AS receiverWishlist
+    FROM assignments a
+    JOIN participants g ON g.id = a.giverId
+    JOIN participants r ON r.id = a.receiverId
+    WHERE a.eventId = ?
+  `).all(event.id);
+
+  res.json(rows);
 });
 
 /* LISTEN */
