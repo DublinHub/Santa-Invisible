@@ -1,0 +1,7 @@
+[build]
+
+[deploy]
+start = "node server.js"
+
+[volumes]
+db = { mountPath = "/app/data" }
