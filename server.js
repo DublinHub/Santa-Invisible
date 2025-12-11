@@ -1,10 +1,11 @@
 const nodemailer = require("nodemailer");
-// server.js
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
 const Database = require("better-sqlite3");
 const path = require("path");
+
+/* TRANSPORTER */
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -17,10 +18,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// DB setup
+/* 🔴 SERVIR ARCHIVOS ESTÁTICOS ANTES DE LAS RUTAS */
+app.use(express.static(path.join(__dirname, "public")));
+
+/* BASE DE DATOS */
 const db = new Database("santa.db");
 
-// Crear tablas si no existen
+/* TABLAS */
 db.exec(`
   CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,19 +57,17 @@ db.exec(`
   );
 `);
 
-// Helper: generar slug simple
+/* HELPERS */
 function generateSlug(name) {
   const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const random = Math.random().toString(36).slice(2, 6);
   return `${base}-${random}`;
 }
 
-// Helper: generar código admin
 function generateAdminCode() {
-  return crypto.randomBytes(3).toString("hex"); // ej "a3f9c2"
+  return crypto.randomBytes(3).toString("hex");
 }
 
-// Helper: algoritmo de sorteo (sin auto-regalos)
 function hacerSorteo(participants) {
   if (participants.length < 2) {
     throw new Error("Se necesitan al menos 2 participantes para el sorteo.");
@@ -75,14 +77,12 @@ function hacerSorteo(participants) {
   let asignaciones = null;
 
   for (let intento = 0; intento < 1000; intento++) {
-    // Clonar y mezclar
     const receptores = [...ids];
     for (let i = receptores.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [receptores[i], receptores[j]] = [receptores[j], receptores[i]];
     }
 
-    // Revisar que nadie se regale a sí mismo
     let valido = true;
     for (let i = 0; i < ids.length; i++) {
       if (ids[i] === receptores[i]) {
@@ -107,7 +107,8 @@ function hacerSorteo(participants) {
   return asignaciones;
 }
 
-// Crear evento
+/* RUTAS API */
+
 app.post("/api/events", (req, res) => {
   const { name, description, deadline } = req.body;
 
@@ -122,6 +123,7 @@ app.post("/api/events", (req, res) => {
     INSERT INTO events (name, slug, description, deadline, status, adminCode)
     VALUES (?, ?, ?, ?, 'open', ?)
   `);
+
   const info = stmt.run(name, slug, description || "", deadline, adminCode);
 
   res.json({
@@ -136,26 +138,23 @@ app.post("/api/events", (req, res) => {
   });
 });
 
-// Obtener evento por slug
 app.get("/api/events/:slug", (req, res) => {
   const { slug } = req.params;
-  const stmt = db.prepare("SELECT id, name, slug, description, deadline, status FROM events WHERE slug = ?");
-  const event = stmt.get(slug);
+  const event = db.prepare(
+    "SELECT id, name, slug, description, deadline, status FROM events WHERE slug = ?"
+  ).get(slug);
 
-  if (!event) {
-    return res.status(404).json({ error: "Evento no encontrado" });
-  }
+  if (!event) return res.status(404).json({ error: "Evento no encontrado" });
 
   res.json(event);
 });
 
-// Agregar participante
+/* AGREGAR PARTICIPANTE */
 app.post("/api/events/:slug/participants", (req, res) => {
   const { slug } = req.params;
   const { name, email, phone, wishlist } = req.body;
 
-  const eventStmt = db.prepare("SELECT * FROM events WHERE slug = ?");
-  const event = eventStmt.get(slug);
+  const event = db.prepare("SELECT * FROM events WHERE slug = ?").get(slug);
   if (!event) return res.status(404).json({ error: "Evento no encontrado" });
 
   if (event.status !== "open") {
@@ -163,8 +162,7 @@ app.post("/api/events/:slug/participants", (req, res) => {
   }
 
   const now = new Date();
-  const deadline = new Date(event.deadline);
-  if (now > deadline) {
+  if (now > new Date(event.deadline)) {
     return res.status(400).json({ error: "La fecha límite ya pasó" });
   }
 
@@ -172,6 +170,7 @@ app.post("/api/events/:slug/participants", (req, res) => {
     INSERT INTO participants (eventId, name, email, phone, wishlist)
     VALUES (?, ?, ?, ?, ?)
   `);
+
   const info = insert.run(event.id, name, email, phone || "", wishlist || "");
 
   res.json({
@@ -184,24 +183,22 @@ app.post("/api/events/:slug/participants", (req, res) => {
   });
 });
 
-// Listar participantes (vista admin simple)
+/* LISTAR PARTICIPANTES */
 app.get("/api/events/:slug/participants", (req, res) => {
-  const { slug } = req.params;
-  const eventStmt = db.prepare("SELECT * FROM events WHERE slug = ?");
-  const event = eventStmt.get(slug);
+  const event = db.prepare("SELECT * FROM events WHERE slug = ?").get(req.params.slug);
   if (!event) return res.status(404).json({ error: "Evento no encontrado" });
 
   const participants = db.prepare("SELECT * FROM participants WHERE eventId = ?").all(event.id);
+
   res.json(participants);
 });
 
-// Hacer sorteo (admin)
+/* HACER SORTEO */
 app.post("/api/events/:slug/draw", (req, res) => {
-  const { slug } = req.params;
   const { adminCode } = req.body;
+  const slug = req.params.slug;
 
-  const eventStmt = db.prepare("SELECT * FROM events WHERE slug = ?");
-  const event = eventStmt.get(slug);
+  const event = db.prepare("SELECT * FROM events WHERE slug = ?").get(slug);
   if (!event) return res.status(404).json({ error: "Evento no encontrado" });
 
   if (event.adminCode !== adminCode) {
@@ -220,49 +217,47 @@ app.post("/api/events/:slug/draw", (req, res) => {
     VALUES (?, ?, ?)
   `);
 
-const transaction = db.transaction(() => {
+  const transaction = db.transaction(() => {
+    asignaciones.forEach(a => insert.run(event.id, a.giverId, a.receiverId));
+    db.prepare("UPDATE events SET status = 'drawn' WHERE id = ?").run(event.id);
+  });
+
+  transaction();
+
+  // Enviar mails
   asignaciones.forEach(a => {
-    insert.run(event.id, a.giverId, a.receiverId);
+    const giver = participants.find(p => p.id === a.giverId);
+    const receiver = participants.find(p => p.id === a.receiverId);
+
+    transporter.sendMail({
+      from: `"Santa Invisible 🎅" <ceciidemalde@gmail.com>`,
+      to: giver.email,
+      subject: "🎁 Tu Santa Invisible",
+      html: `
+        <h2>🎅 Santa Invisible Familiar</h2>
+        <p>Hola <b>${giver.name}</b>,</p>
+        <p>Te tocó regalarle a:</p>
+        <h3>${receiver.name}</h3>
+        <p><b>Lista de regalos:</b></p>
+        <p>${receiver.wishlist || "No cargó lista de regalos."}</p>
+        <br>
+        <p>🎄 ¡Felices fiestas!</p>
+      `
+    });
   });
-  db.prepare("UPDATE events SET status = 'drawn' WHERE id = ?").run(event.id);
-});
 
-transaction();
-
-// Enviar mails privados a cada participante
-asignaciones.forEach(a => {
-  const giver = participants.find(p => p.id === a.giverId);
-  const receiver = participants.find(p => p.id === a.receiverId);
-
-  transporter.sendMail({
-    from: `"Santa Invisible 🎅" <${process.env.MAIL_USER}>`,
-    to: giver.email,
-    subject: "🎁 Tu Santa Invisible",
-    html: `
-      <h2>🎅 Santa Invisible Familiar</h2>
-      <p>Hola <b>${giver.name}</b>,</p>
-      <p>Te tocó regalarle a:</p>
-      <h3>${receiver.name}</h3>
-      <p><b>Lista de regalos:</b></p>
-      <p>${receiver.wishlist || "No cargó lista de regalos."}</p>
-      <br>
-      <p>🎄 ¡Felices fiestas!</p>
-    `
+  res.json({
+    message: "Sorteo realizado con éxito y mails enviados",
+    total: asignaciones.length
   });
 });
 
-res.json({ message: "Sorteo realizado con éxito y mails enviados", total: asignaciones.length });
-
-
-});
-
-// Ver mis resultados (para un participante, por email)
+/* VER ASIGNACIÓN */
 app.post("/api/events/:slug/my-assignment", (req, res) => {
   const { slug } = req.params;
   const { email } = req.body;
 
-  const eventStmt = db.prepare("SELECT * FROM events WHERE slug = ?");
-  const event = eventStmt.get(slug);
+  const event = db.prepare("SELECT * FROM events WHERE slug = ?").get(slug);
   if (!event) return res.status(404).json({ error: "Evento no encontrado" });
 
   if (event.status !== "drawn") {
@@ -287,26 +282,16 @@ app.post("/api/events/:slug/my-assignment", (req, res) => {
 
   const receiver = db.prepare("SELECT * FROM participants WHERE id = ?").get(assignment.receiverId);
 
-res.json({
+  res.json({
     you: participant.name,
     receiverName: receiver.name,
     receiverWishlist: receiver.wishlist,
+  });
 });
-});   // ← esta cierra la función interna
 
-
-// Servir frontend estático (si lo ponés en /public)
-app.use(express.static(path.join(__dirname, "public")));
-
+/* LISTEN */
 const PORT = process.env.PORT || 3000;
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+
 app.listen(PORT, () => {
-    console.log(`Santa Invisible app escuchando en puerto ${PORT}`);
+  console.log(`Santa Invisible app escuchando en puerto ${PORT}`);
 });
-
-
-
-
-
