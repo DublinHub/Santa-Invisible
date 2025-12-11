@@ -5,263 +5,345 @@
   <title>Santa Invisible Familiar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- 🎄 ESTILOS CORREGIDOS -->
   <style>
-    /* Fondo navideño */
+    /* Fondo navideño desde la carpeta public */
     body {
       background: url("fondoNavidad.jpg") no-repeat center center fixed;
       background-size: cover;
-      font-family: 'Poppins', sans-serif;
+      font-family: "Poppins", sans-serif;
       margin: 0;
       padding: 0;
     }
 
-    /* Contenedor principal */
-    .container {
-      background: rgba(255, 255, 255, 0.90);
-      width: 80%;
+    .wrapper {
       max-width: 900px;
-      margin: 40px auto;
-      padding: 35px;
+      margin: 30px auto 60px auto;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.92);
       border-radius: 18px;
-      box-shadow: 0 0 22px rgba(0, 0, 0, 0.2);
+      padding: 25px 30px 30px 30px;
+      margin-bottom: 25px;
+      box-shadow: 0 0 22px rgba(0, 0, 0, 0.18);
       backdrop-filter: blur(6px);
     }
 
     h1 {
       text-align: center;
-      color: #8B0000;
-      font-size: 2.5rem;
-      margin-bottom: 20px;
-      text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+      color: #8b0000;
+      font-size: 2.4rem;
+      margin: 25px 0;
+      text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
     }
 
-    h1::before { content: "🎅 "; }
-    h1::after { content: " 🎄"; }
+    h1::before {
+      content: "🎅 ";
+    }
+    h1::after {
+      content: " 🎄";
+    }
 
     h2 {
       text-align: center;
-      color: #B22222;
+      color: #b22222;
+      margin-top: 0;
       margin-bottom: 10px;
-      font-weight: bold;
+      font-weight: 700;
     }
 
     label {
-      font-weight: 600;
       display: block;
+      font-weight: 600;
       margin-top: 10px;
     }
 
-    input, textarea {
+    input,
+    textarea {
       width: 100%;
-      padding: 12px;
+      box-sizing: border-box;
+      margin-top: 6px;
+      padding: 10px 12px;
       border-radius: 10px;
       border: 2px solid #d7b18a;
       background: #fffdfa;
-      margin-top: 5px;
       font-size: 1rem;
     }
 
-    textarea { resize: vertical; min-height: 120px; }
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
 
     button {
       width: 100%;
-      padding: 14px;
-      margin-top: 20px;
-      border: none;
+      margin-top: 18px;
+      padding: 12px;
       border-radius: 10px;
-      font-size: 18px;
-      font-weight: bold;
-      background: linear-gradient(45deg, #b30000, #e94242);
-      color: white;
+      border: none;
       cursor: pointer;
-      transition: 0.2s;
+      font-size: 1rem;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(45deg, #b30000, #e63946);
+      box-shadow: 0 4px 10px rgba(179, 0, 0, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
     button:hover {
       transform: scale(1.03);
-      box-shadow: 0 6px 14px rgba(179,0,0,0.4);
+      box-shadow: 0 6px 14px rgba(179, 0, 0, 0.45);
     }
 
     .small {
       font-size: 0.9rem;
       color: #444;
       margin-top: 10px;
+      white-space: pre-wrap;
       word-break: break-word;
+    }
+
+    .solo-ceci {
+      font-size: 0.85rem;
+      color: #aa0000;
+      text-align: center;
+      margin-bottom: 5px;
+      font-weight: 600;
     }
   </style>
 </head>
-
 <body>
+  <div class="wrapper">
+    <h1>Santa Invisible Familiar</h1>
 
-  <h1>Santa Invisible Familiar</h1>
+    <!-- 1. Crear evento -->
+    <div class="card">
+      <h2>1. Crear nuevo evento</h2>
+      <div class="solo-ceci">⚠️ Esta sección es solo para uso de Ceci</div>
+      <label>Nombre del evento
+        <input id="ev-name" />
+      </label>
+      <label>Descripción
+        <textarea id="ev-desc"></textarea>
+      </label>
+      <label>Fecha límite (ej: 2025-12-20T23:59)
+        <input id="ev-deadline" placeholder="YYYY-MM-DDTHH:MM" />
+      </label>
+      <button onclick="crearEvento()">Crear evento</button>
+      <p id="ev-result" class="small"></p>
+    </div>
 
-  <div class="container">
-    <h2>1. Crear nuevo evento</h2>
-    <label>Nombre del evento
-      <input id="ev-name">
-    </label>
-    <label>Descripción
-      <textarea id="ev-desc"></textarea>
-    </label>
-    <label>Fecha límite (ej: 2025-12-20T23:59)
-      <input id="ev-deadline" placeholder="YYYY-MM-DDTHH:MM">
-    </label>
-    <button onclick="crearEvento()">Crear evento</button>
-    <p id="ev-result" class="small"></p>
+    <!-- 2. Ver evento -->
+    <div class="card">
+      <h2>2. Ver un evento (por slug)</h2>
+      <label>Slug del evento
+        <input id="slug-input" placeholder="familia-2025-xxxx" />
+      </label>
+      <button onclick="cargarEvento()">Cargar evento</button>
+      <p id="event-info" class="small"></p>
+    </div>
+
+    <!-- 3. Anotarse -->
+    <div class="card">
+      <h2>3. Anotarse al evento</h2>
+      <p class="small">Usá el mismo slug que ves en la sección 2.</p>
+      <label>Nombre
+        <input id="p-name" />
+      </label>
+      <label>Email
+        <input id="p-email" />
+      </label>
+      <label>Teléfono (opcional)
+        <input id="p-phone" />
+      </label>
+      <label>Lista de regalos
+        <textarea id="p-wishlist" placeholder="Ej: libro X, perfume Y, auriculares..."></textarea>
+      </label>
+      <button onclick="agregarParticipante()">Enviar mis datos</button>
+      <p id="p-result" class="small"></p>
+    </div>
+
+    <!-- 4. Ver mi asignación -->
+    <div class="card">
+      <h2>4. Ver a quién me tocó</h2>
+      <label>Slug del evento
+        <input id="slug-my" />
+      </label>
+      <label>Tu email
+        <input id="my-email" />
+      </label>
+      <button onclick="verMiAsignacion()">Ver mi persona</button>
+      <p id="my-result" class="small"></p>
+    </div>
+
+    <!-- 5. Sorteo (solo Ceci) -->
+    <div class="card">
+      <h2>5. Hacer el sorteo</h2>
+      <div class="solo-ceci">⚠️ Solo Ceci toca acá (admin)</div>
+      <label>Slug del evento
+        <input id="slug-admin" />
+      </label>
+      <label>Código de administradora
+        <input id="admin-code" />
+      </label>
+      <button onclick="hacerSorteo()">Sortear</button>
+      <p id="draw-result" class="small"></p>
+    </div>
   </div>
 
-  <div class="container">
-    <h2>2. Ver un evento (por slug)</h2>
-    <label>Slug del evento
-      <input id="slug-input">
-    </label>
-    <button onclick="cargarEvento()">Cargar evento</button>
-    <p id="event-info" class="small"></p>
-  </div>
-
-  <div class="container">
-    <h2>3. Anotarse al evento</h2>
-    <label>Nombre
-      <input id="p-name">
-    </label>
-    <label>Email
-      <input id="p-email">
-    </label>
-    <label>Teléfono (opcional)
-      <input id="p-phone">
-    </label>
-    <label>Lista de regalos
-      <textarea id="p-wishlist"></textarea>
-    </label>
-    <button onclick="agregarParticipante()">Enviar mis datos</button>
-    <p id="p-result" class="small"></p>
-  </div>
-
-  <div class="container">
-    <h2>4. Ver mi persona asignada</h2>
-    <label>Slug del evento
-      <input id="slug-my">
-    </label>
-    <label>Tu email
-      <input id="my-email">
-    </label>
-    <button onclick="verMiAsignacion()">Ver mi persona</button>
-    <p id="my-result" class="small"></p>
-  </div>
-
-  <div class="container">
-    <h2>5. Sorteo (solo Ceci)</h2>
-    <label>Slug del evento
-      <input id="slug-admin">
-    </label>
-    <label>Código admin
-      <input id="admin-code">
-    </label>
-    <button onclick="hacerSorteo()">Sortear</button>
-    <p id="draw-result" class="small"></p>
-  </div>
-
-  <!-- ❄ SNOWFALL LIBRARY -->
-  <script src="https://cdn.jsdelivr.net/npm/snowfall-js@1.0.0/snowfall.min.js"></script>
-
-  <script>
-    snowfall.snow(document.body, {
-      round: true,
-      minSize: 2,
-      maxSize: 6,
-      flakeCount: 80,
-      speed: 0.5
-    });
-  </script>
-
-  <!-- 🔧 FUNCIONES JS -->
+  <!-- JS principal: llamadas a la API -->
   <script>
     const API_BASE = "";
 
     async function crearEvento() {
-      const name = ev-name.value;
-      const description = ev-desc.value;
-      const deadline = ev-deadline.value;
+      const name = document.getElementById("ev-name").value.trim();
+      const description = document.getElementById("ev-desc").value.trim();
+      const deadline = document.getElementById("ev-deadline").value.trim();
+      const resultEl = document.getElementById("ev-result");
 
-      const res = await fetch("/api/events", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({name, description, deadline})
-      });
+      if (!name || !deadline) {
+        resultEl.textContent = "Falta el nombre o la fecha límite.";
+        return;
+      }
 
-      const data = await res.json();
-      ev-result.textContent = res.ok ?
-        `Evento creado: ${data.slug} | Admin: ${data.adminCode}` :
-        data.error;
+      try {
+        const res = await fetch(API_BASE + "/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, description, deadline })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al crear el evento");
+
+        resultEl.textContent =
+          `Evento creado.\nSlug: ${data.slug}\nCódigo admin: ${data.adminCode}`;
+      } catch (err) {
+        resultEl.textContent = "Error: " + err.message;
+      }
     }
 
     async function cargarEvento() {
-      const slug = slug-input.value.trim();
-      if (!slug) return event-info.textContent = "Poné un slug";
+      const slug = document.getElementById("slug-input").value.trim();
+      const infoEl = document.getElementById("event-info");
 
-      const res = await fetch(`/api/events/${slug}`);
-      const data = await res.json();
+      if (!slug) {
+        infoEl.textContent = "Poné un slug.";
+        return;
+      }
 
-      event-info.textContent = res.ok ?
-        `${data.name} | Límite: ${data.deadline} | Estado: ${data.status}` :
-        data.error;
+      try {
+        const res = await fetch(API_BASE + "/api/events/" + slug);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al cargar evento");
+
+        infoEl.textContent =
+          `Evento: ${data.name}\nEstado: ${data.status}\nLímite: ${data.deadline}`;
+      } catch (err) {
+        infoEl.textContent = "Error: " + err.message;
+      }
     }
 
     async function agregarParticipante() {
-      const slug = slug-input.value.trim();
-      if (!slug) return p-result.textContent = "Primero cargá el evento";
+      const slug = document.getElementById("slug-input").value.trim();
+      const name = document.getElementById("p-name").value.trim();
+      const email = document.getElementById("p-email").value.trim();
+      const phone = document.getElementById("p-phone").value.trim();
+      const wishlist = document.getElementById("p-wishlist").value.trim();
+      const resultEl = document.getElementById("p-result");
 
-      const body = {
-        name: p-name.value,
-        email: p-email.value,
-        phone: p-phone.value,
-        wishlist: p-wishlist.value
-      };
+      if (!slug) {
+        resultEl.textContent = "Primero cargá el evento (slug en la sección 2).";
+        return;
+      }
 
-      const res = await fetch(`/api/events/${slug}/participants`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(body)
-      });
+      if (!name || !email) {
+        resultEl.textContent = "Nombre y email son obligatorios.";
+        return;
+      }
 
-      const data = await res.json();
-      p-result.textContent = res.ok ? "¡Te anotaste con éxito!" : data.error;
+      try {
+        const res = await fetch(API_BASE + `/api/events/${slug}/participants`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, phone, wishlist })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al anotarse");
+
+        resultEl.textContent = "¡Te anotaste correctamente!";
+      } catch (err) {
+        resultEl.textContent = "Error: " + err.message;
+      }
     }
 
     async function verMiAsignacion() {
-      const slug = slug-my.value.trim();
-      const email = my-email.value;
+      const slug = document.getElementById("slug-my").value.trim();
+      const email = document.getElementById("my-email").value.trim();
+      const resultEl = document.getElementById("my-result");
 
-      const res = await fetch(`/api/events/${slug}/my-assignment`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ email })
-      });
+      if (!slug || !email) {
+        resultEl.textContent = "Falta slug o email.";
+        return;
+      }
 
-      const data = await res.json();
-      my-result.textContent = res.ok ?
-        `Te tocó: ${data.receiverName}\nRegalos: ${data.receiverWishlist}` :
-        data.error;
+      try {
+        const res = await fetch(API_BASE + `/api/events/${slug}/my-assignment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al buscar asignación");
+
+        resultEl.textContent =
+          `Te tocó: ${data.receiverName}\nLista de regalos: ${data.receiverWishlist || "Sin lista"}`;
+      } catch (err) {
+        resultEl.textContent = "Error: " + err.message;
+      }
     }
 
     async function hacerSorteo() {
-      const slug = slug-admin.value.trim();
-      const adminCode = admin-code.value;
+      const slug = document.getElementById("slug-admin").value.trim();
+      const adminCode = document.getElementById("admin-code").value.trim();
+      const resultEl = document.getElementById("draw-result");
 
-      const res = await fetch(`/api/events/${slug}/draw`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ adminCode })
-      });
+      if (!slug || !adminCode) {
+        resultEl.textContent = "Falta slug o código admin.";
+        return;
+      }
 
-      const data = await res.json();
-      draw-result.textContent = res.ok ?
-        data.message :
-        data.error;
+      try {
+        const res = await fetch(API_BASE + `/api/events/${slug}/draw`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ adminCode })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al hacer el sorteo");
+
+        resultEl.textContent = `${data.message} (Total asignaciones: ${data.total})`;
+      } catch (err) {
+        resultEl.textContent = "Error: " + err.message;
+      }
     }
   </script>
 
+  <!-- Nieve: en script separado y protegido -->
+  <script src="https://cdn.jsdelivr.net/npm/snowfall-js@1.0.0/snowfall.min.js"></script>
+  <script>
+    // Si la librería carga bien, activamos la nieve
+    if (window.snowfall) {
+      snowfall.snow(document.body, {
+        round: true,
+        minSize: 2,
+        maxSize: 6,
+        flakeCount: 80
+      });
+    }
+  </script>
 </body>
 </html>
-
