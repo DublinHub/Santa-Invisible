@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Santa Invisible Familiar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<style>
+
+/* 🎄 Fondo navideño elegante */
+body {
+  background: url('https://i.imgur.com/4CvwYtS.png');
+  background-size: cover;
+  background-attachment: fixed;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 20px;
+}
+
+/* 🎁 Contenedor de cards */
+.card {
+  background: rgba(255, 255, 255, 0.90);
+  border-radius: 18px;
+  padding: 30px;
+  margin: 20px auto;
+  max-width: 700px;
+  box-shadow: 0 0 22px rgba(0,0,0,0.15);
+  backdrop-filter: blur(6px);
+}
+
+/* 🎅 Títulos navideños */
+h1, h2 {
+  text-align: center;
+  font-weight: 700;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.25);
+}
+
+h1 {
+  color: #8B0000;
+  font-size: 2.4rem;
+  margin-bottom: 30px;
+}
+
+h2 {
+  color: #B22222;
+  margin-bottom: 15px;
+}
+
+/* Inputs */
+input, textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid #d7b18a;
+  background: #fffdfa;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Botón navideño */
+button {
+  background: linear-gradient(45deg, #b30000, #e63946);
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 18px;
+  color: white;
+  width: 100%;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 4px 10px rgba(179,0,0,0.3);
+}
+
+button:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 14px rgba(179,0,0,0.4);
+}
+
+.small {
+  font-size: 0.9rem;
+  color: #444;
+  margin-top: 8px;
+  word-break: break-word;
+}
+
+</style>
+</head>
+
+<body>
+
+  <h1>🎅 Santa Invisible Familiar 🎄</h1>
+
+  <div class="card">
+    <h2>1. Crear nuevo evento</h2>
+    <label>Nombre del evento
+      <input id="ev-name" />
+    </label>
+    <label>Descripción
+      <textarea id="ev-desc"></textarea>
+    </label>
+    <label>Fecha límite (ej: 2025-12-20T23:59)
+      <input id="ev-deadline" placeholder="YYYY-MM-DDTHH:MM" />
+    </label>
+    <button onclick="crearEvento()">Crear evento</button>
+    <p id="ev-result" class="small"></p>
+  </div>
+
+  <div class="card">
+    <h2>2. Ver un evento (por slug)</h2>
+    <label>Slug del evento
+      <input id="slug-input" placeholder="familia-2025-abcd" />
+    </label>
+    <button onclick="cargarEvento()">Cargar evento</button>
+    <p id="event-info" class="small"></p>
+  </div>
+
+  <div class="card">
+    <h2>3. Anotarse al evento</h2>
+    <p class="small">Usa el mismo slug del evento cargado arriba.</p>
+    <label>Nombre
+      <input id="p-name" />
+    </label>
+    <label>Email
+      <input id="p-email" />
+    </label>
+    <label>Teléfono (opcional)
+      <input id="p-phone" />
+    </label>
+    <label>Lista de regalos
+      <textarea id="p-wishlist" placeholder="Ej: Libro tal, Perfume X..."></textarea>
+    </label>
+    <button onclick="agregarParticipante()">Enviar mis datos</button>
+    <p id="p-result" class="small"></p>
+  </div>
+
+  <div class="card">
+    <h2>4. Ver a quién me tocó (después del sorteo)</h2>
+    <label>Slug del evento
+      <input id="slug-my" />
+    </label>
+    <label>Tu email
+      <input id="my-email" />
+    </label>
+    <button onclick="verMiAsignacion()">Ver mi persona</button>
+    <p id="my-result" class="small"></p>
+  </div>
+
+  <div class="card">
+    <h2>5. Hacer el sorteo (admin)</h2>
+    <label>Slug del evento
+      <input id="slug-admin" />
+    </label>
+    <label>Código de administradora
+      <input id="admin-code" />
+    </label>
+    <button onclick="hacerSorteo()">Sortear</button>
+    <p id="draw-result" class="small"></p>
+  </div>
+
+<script>
+  const API_BASE = "";
+
+  async function crearEvento() {
+    const name = document.getElementById("ev-name").value;
+    const description = document.getElementById("ev-desc").value;
+    const deadline = document.getElementById("ev-deadline").value;
+    const resultEl = document.getElementById("ev-result");
+
+    try {
+      const res = await fetch(API_BASE + "/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description, deadline })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al crear evento");
+      resultEl.textContent =
+        `Evento creado. Slug: ${data.slug} | Código admin: ${data.adminCode}`;
+    } catch (err) {
+      resultEl.textContent = "Error: " + err.message;
+    }
+  }
+
+  async function cargarEvento() {
+    const slug = document.getElementById("slug-input").value.trim();
+    const infoEl = document.getElementById("event-info");
+    if (!slug) return infoEl.textContent = "Poné un slug.";
+
+    try {
+      const res = await fetch(API_BASE + "/api/events/" + slug);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al cargar evento");
+      infoEl.textContent =
+        `Evento: ${data.name} | Estado: ${data.status} | Límite: ${data.deadline}`;
+    } catch (err) {
+      infoEl.textContent = "Error: " + err.message;
+    }
+  }
+
+  async function agregarParticipante() {
+    const slug = document.getElementById("slug-input").value.trim();
+    const name = document.getElementById("p-name").value;
+    const email = document.getElementById("p-email").value;
+    const phone = document.getElementById("p-phone").value;
+    const wishlist = document.getElementById("p-wishlist").value;
+    const resultEl = document.getElementById("p-result");
+
+    if (!slug) return resultEl.textContent = "Primero cargá el evento (slug).";
+
+    try {
+      const res = await fetch(API_BASE + `/api/events/${slug}/participants`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone, wishlist })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al anotarse");
+      resultEl.textContent = "¡Te anotaste correctamente!";
+    } catch (err) {
+      resultEl.textContent = "Error: " + err.message;
+    }
+  }
+
+  async function verMiAsignacion() {
+    const slug = document.getElementById("slug-my").value.trim();
+    const email = document.getElementById("my-email").value;
+    const resultEl = document.getElementById("my-result");
+
+    if (!slug || !email) return resultEl.textContent = "Falta slug o email.";
+
+    try {
+      const res = await fetch(API_BASE + `/api/events/${slug}/my-assignment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error");
+      resultEl.textContent =
+        `Te tocó: ${data.receiverName}. Lista de regalos: ${data.receiverWishlist}`;
+    } catch (err) {
+      resultEl.textContent = "Error: " + err.message;
+    }
+  }
+
+  async function hacerSorteo() {
+    const slug = document.getElementById("slug-admin").value.trim();
+    const adminCode = document.getElementById("admin-code").value;
+    const resultEl = document.getElementById("draw-result");
+
+    if (!slug || !adminCode)
+      return resultEl.textContent = "Falta slug o código admin.";
+
+    try {
+      const res = await fetch(API_BASE + `/api/events/${slug}/draw`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminCode })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error");
+      resultEl.textContent =
+        data.message + ` (Total asignaciones: ${data.total})`;
+    } catch (err) {
+      resultEl.textContent = "Error: " + err.message;
+    }
+  }
+
+</script>
+
+<!-- ❄ Nieve suave -->
+<script src="https://cdn.jsdelivr.net/npm/snowfall-js@1.0.0/snowfall.min.js"></script>
+<script>
+  snowfall.snow(document.body, { round: true, minSize: 2, maxSize: 5, flakeCount: 50 });
+</script>
+
+</body>
+</html>
+
+
