@@ -287,20 +287,22 @@ app.post("/api/events/:slug/my-assignment", (req, res) => {
 
   const receiver = db.prepare("SELECT * FROM participants WHERE id = ?").get(assignment.receiverId);
 
-  res.json({
+res.json({
     you: participant.name,
     receiverName: receiver.name,
     receiverWishlist: receiver.wishlist,
-  });
 });
+});   // ← esta cierra la función interna
+});   // 💥 ← ESTA es la que te faltaba: cierra el endpoint completo
+
 
 // Servir frontend estático (si lo ponés en /public)
 app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Santa Invisible app escuchando en puerto ${PORT}`);
+    console.log(`Santa Invisible app escuchando en puerto ${PORT}`);
 });
 
-});
+
 
