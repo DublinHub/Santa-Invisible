@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 /* BASE DE DATOS — AHORA PERSISTE EN EL VOLUMEN */
-const db = new Database("/app/data/santa.db");
+const db = new Database(path.join(__dirname, "data", "santa.db"));
 
 /* TABLAS */
 db.exec(`
@@ -325,3 +325,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Santa Invisible app escuchando en puerto ${PORT}`);
 });
+
