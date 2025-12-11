@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Santa Invisible Familiar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- 🎄 ESTILOS NAVIDEÑOS -->
+  <style>
+
+  /* 🎄 Fondo navideño suave (Opción 2) */
+  body {
+    background: url('https://i.imgur.com/V0eVYcZ.jpeg');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+
+  /* 🎁 Contenedor principal en tarjetas */
+  .card {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 25px;
+    border-radius: 16px;
+    max-width: 850px;
+    margin: 30px auto;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    backdrop-filter: blur(6px);
+  }
+
+  /* 🎅 Títulos */
+  h1, h2 {
+    text-align: center;
+    font-weight: 700;
+    color: #8B0000;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.25);
+  }
+
+  h1 {
+    font-size: 2.3rem;
+  }
+  h1::before { content: "🎅 "; }
+  h1::after { content: " 🎄"; }
+
+  /* 📝 Inputs */
+  input, textarea {
+    width: 100%;
+    background: #fffdf7;
+    padding: 12px;
+    border-radius: 10px;
+    border: 2px solid #d7b18a;
+    margin-top: 8px;
+    font-size: 1rem;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 90px;
+  }
+
+  label {
+    display: block;
+    margin-top: 10px;
+    font-weight: 600;
+  }
+
+  /* 🔘 Botón principal */
+  button {
+    width: 100%;
+    margin-top: 18px;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(45deg, #b30000, #ff4d4d);
+    cursor: pointer;
+    transition: 0.25s ease;
+    box-shadow: 0 4px 10px rgba(140,0,0,0.35);
+  }
+
+  button:hover {
+    transform: scale(1.04);
+    box-shadow: 0 6px 16px rgba(140,0,0,0.45);
+  }
+
+  .small {
+    font-size: 0.9rem;
+    margin-top: 10px;
+    color: #333;
+    word-break: break-word;
+  }
+
+  </style>
+</head>
+
+<body>
+
+  <h1>Santa Invisible Familiar</h1>
+
+  <!-- 🎄 1. Crear Evento -->
+  <div class="card">
+    <h2>1. Crear nuevo evento</h2>
+
+    <label>Nombre del evento
+      <input id="ev-name">
+    </label>
+
+    <label>Descripción
+      <textarea id="ev-desc"></textarea>
+    </label>
+
+    <label>Fecha límite (ej: 2025-12-20T23:59)
+      <input id="ev-deadline" placeholder="YYYY-MM-DDTHH:MM">
+    </label>
+
+    <button onclick="crearEvento()">Crear evento</button>
+    <p id="ev-result" class="small"></p>
+  </div>
+
+  <!-- 🎄 2. Ver Evento -->
+  <div class="card">
+    <h2>2. Ver un evento (por slug)</h2>
+
+    <label>Slug del evento
+      <input id="slug-input" placeholder="familia-2025-magic">
+    </label>
+
+    <button onclick="cargarEvento()">Cargar evento</button>
+    <p id="event-info" class="small"></p>
+  </div>
+
+  <!-- 🎄 3. Anotarse -->
+  <div class="card">
+    <h2>3. Anotarse al evento</h2>
+
+    <label>Nombre
+      <input id="p-name">
+    </label>
+
+    <label>Email
+      <input id="p-email">
+    </label>
+
+    <label>Teléfono (opcional)
+      <input id="p-phone">
+    </label>
+
+    <label>Lista de regalos
+      <textarea id="p-wishlist" placeholder="Ej: Perfume, Libro, Auriculares..."></textarea>
+    </label>
+
+    <button onclick="agregarParticipante()">Enviar mis datos</button>
+    <p id="p-result" class="small"></p>
+  </div>
+
+  <!-- 🎄 4. Ver Asignación -->
+  <div class="card">
+    <h2>4. Ver a quién me tocó</h2>
+
+    <label>Slug del evento
+      <input id="slug-my">
+    </label>
+
+    <label>Tu email
+      <input id="my-email">
+    </label>
+
+    <button onclick="verMiAsignacion()">Ver mi persona</button>
+    <p id="my-result" class="small"></p>
+  </div>
+
+  <!-- 🎄 5. Sorteo admin -->
+  <div class="card">
+    <h2>5. Hacer el sorteo (admin)</h2>
+
+    <label>Slug del evento
+      <input id="slug-admin">
+    </label>
+
+    <label>Código admin
+      <input id="admin-code">
+    </label>
+
+    <button onclick="hacerSorteo()">Sortear</button>
+    <p id="draw-result" class="small"></p>
+  </div>
+
+
+  <!-- 🎄 LÓGICA JS -->
+  <script>
+    const API_BASE = "";
+
+    async function crearEvento() {
+      const name = ev-name.value;
+      const description = ev-desc.value;
+      const deadline = ev-deadline.value;
+
+      try {
+        const res = await fetch(API_BASE + "/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, description, deadline })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        ev-result.textContent = `Evento creado. Slug: ${data.slug} | Código admin: ${data.adminCode}`;
+      } catch (err) {
+        ev-result.textContent = "❌ " + err.message;
+      }
+    }
+
+    async function cargarEvento() {
+      const slug = slug-input.value.trim();
+      if (!slug) return event-info.textContent = "Ingresá el slug";
+
+      try {
+        const res = await fetch(API_BASE + "/api/events/" + slug);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        event-info.textContent = `Evento: ${data.name} | Estado: ${data.status}`;
+      } catch (err) {
+        event-info.textContent = "❌ " + err.message;
+      }
+    }
+
+    async function agregarParticipante() {
+      const slug = slug-input.value.trim();
+      if (!slug) return p-result.textContent = "Cargá el evento primero.";
+
+      try {
+        const res = await fetch(API_BASE + `/api/events/${slug}/participants`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: p-name.value,
+            email: p-email.value,
+            phone: p-phone.value,
+            wishlist: p-wishlist.value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        p-result.textContent = "🎉 ¡Listo! Te anotaste.";
+      } catch (err) {
+        p-result.textContent = "❌ " + err.message;
+      }
+    }
+
+    async function verMiAsignacion() {
+      try {
+        const res = await fetch(API_BASE + `/api/events/${slug-my.value}/my-assignment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: my-email.value })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        my-result.textContent = `Te tocó: 🎁 ${data.receiverName} — Lista: ${data.receiverWishlist}`;
+      } catch (err) {
+        my-result.textContent = "❌ " + err.message;
+      }
+    }
+
+    async function hacerSorteo() {
+      try {
+        const res = await fetch(API_BASE + `/api/events/${slug-admin.value}/draw`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ adminCode: admin-code.value })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        draw-result.textContent = `🎄 ${data.message} — Total: ${data.total}`;
+      } catch (err) {
+        draw-result.textContent = "❌ " + err.message;
+      }
+    }
+  </script>
+
+  <!-- ❄️ NIEVE SUAVE -->
+  <script src="https://cdn.jsdelivr.net/npm/snowfall-js@1.0.0/snowfall.min.js"></script>
+  <script>
+    snowfall.snow(document.body, {
+      round: true,
+      minSize: 2,
+      maxSize: 5,
+      flakeCount: 50,
+      fallingSpeed: 0.4  /* ❄️ nieve lenta */
+    });
+  </script>
+
+</body>
+</html>
+
+
