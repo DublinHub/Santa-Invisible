@@ -293,7 +293,6 @@ res.json({
     receiverWishlist: receiver.wishlist,
 });
 });   // ← esta cierra la función interna
-});   // 💥 ← ESTA es la que te faltaba: cierra el endpoint completo
 
 
 // Servir frontend estático (si lo ponés en /public)
@@ -303,6 +302,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Santa Invisible app escuchando en puerto ${PORT}`);
 });
+
 
 
 
